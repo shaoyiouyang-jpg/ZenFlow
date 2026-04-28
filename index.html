@@ -251,12 +251,26 @@ window.parseExcelToConfig = function(arrayBuffer) {
     if (isNaN(cycle)) continue;
     const title = (row['大标题'] || '').trim();
     const point = (row['小文字'] || '').trim();
-    const phase = parseInt(row['分段']) || 4;   // default: always visible
+    const phase = parseInt(row['分段']) || 4;
     if (!config[cycle]) config[cycle] = { title, warning: title.startsWith('⚠'), points: [] };
     if (point) config[cycle].points.push({ text: point, phase });
   }
   if (Object.keys(config).length === 0) throw new Error('未读取到有效数据，请检查列名：ID、循环、大标题、小文字');
   return config;
+};
+
+window.parseCopyExcel = function(arrayBuffer) {
+  const wb = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws);
+  const copy = {};
+  for (const r of rows) {
+    const key = (r['KEY'] || '').toString().trim();
+    const val = (r['VALUE'] !== undefined ? r['VALUE'] : '').toString().trim();
+    if (key && val) copy[key] = val;
+  }
+  if (Object.keys(copy).length === 0) throw new Error('未读取到有效数据，请检查列名：KEY、VALUE');
+  return copy;
 };
 
 window.saveTutorialConfig = function(config) {
@@ -273,6 +287,50 @@ window.TUTORIAL_CONFIG = (function() {
   } catch(e) {}
   return window.TUTORIAL_EMBEDDED;
 })();
+
+// ── APP_COPY: all non-tutorial copy, editable via "文案" sheet in tutorial.xlsx ──
+window.APP_COPY_DEFAULT = {
+  'home.heading':'此刻\n你是安全的', 'home.cta':'开始今日练习',
+  'mindful.intro.title':'把注意力\n带回身体',
+  'mindful.intro.desc':'依次说出你此刻能感知到的事物。每输入一个，星点就会连成图案。这是经过科学验证的快速脱离焦虑方法。',
+  'mindful.done.title':'你回来了',
+  'mindful.done.desc':'你刚刚用 15 个感知锚点，把注意力从焦虑中拉了回来。这是真实发生的神经系统调节。',
+  'mindful.see.title':'你能看到什么？',   'mindful.see.hint':'环顾四周，说出 5 个你此刻能看见的事物',
+  'mindful.feel.title':'你能感觉到什么？', 'mindful.feel.hint':'觉察身体，说出 4 种你能感受到的触感',
+  'mindful.hear.title':'你能听到什么？',   'mindful.hear.hint':'安静片刻，说出 3 种你能听到的声音',
+  'mindful.smell.title':'你能闻到什么？',  'mindful.smell.hint':'深吸一口气，说出 2 种你能感受到的气味',
+  'mindful.taste.title':'你能尝到什么？',  'mindful.taste.hint':'感受此刻口腔中的味道',
+  'therapy.cbt.name':'认知行为疗法',     'therapy.cbt.sub':'识别并重构负面思维模式',
+  'therapy.exercise.name':'运动疗法',    'therapy.exercise.sub':'通过身体活动释放内啡肽',
+  'therapy.music.name':'音乐疗法',       'therapy.music.sub':'用声音调节情绪与神经系统',
+  'therapy.community.name':'冥想社区',   'therapy.community.sub':'与同行者共享平静的片刻',
+  'therapy.social.name':'今日社交',      'therapy.social.sub':'微小的联结，巨大的疗愈力',
+  'therapy.mindful.name':'正念疗法',     'therapy.mindful.sub':'活在当下，感知而不评判',
+  'summary.tier0.name':'已踏出第一步',   'summary.tier0.msg':'每一次呼吸都算数。下次试试坚持完整一个循环。',
+  'summary.tier1.name':'初心之息',       'summary.tier1.msg':'你已完成了第一次完整练习。感受到了那份平静了吗？',
+  'summary.tier2.name':'渐入平静',       'summary.tier2.msg':'一分钟的专注，足以改变接下来一小时的状态。',
+  'summary.tier3.name':'心流初现',       'summary.tier3.msg':'三分钟的练习开始真实激活副交感神经——科学证实的平静通道。',
+  'summary.tier4.name':'深度宁静',       'summary.tier4.msg':'研究显示六分钟后焦虑感显著下降。你的神经系统正在重置。',
+  'summary.tier5.name':'禅定圆满',       'summary.tier5.msg':'十分钟完整练习，神经系统已全面切换至平静模式。这是最高层级。',
+  'tree.s0.main':'种子刚刚落土', 'tree.s0.sub':'每一次呼吸，都是新的开始',
+  'tree.s1.main':'嫩芽初现',    'tree.s1.sub':'生命在安静中悄悄萌发',
+  'tree.s2.main':'向光而生',    'tree.s2.sub':'你的坚持正在滋养这片内心',
+  'tree.s3.main':'根系渐稳',    'tree.s3.sub':'平静不是终点，是你本来的样子',
+  'tree.s4.main':'枝桠舒展',    'tree.s4.sub':'你已走过了一半的旅程',
+  'tree.s5.main':'花蕾初绽',    'tree.s5.sub':'内心的宁静开始以花的姿态绽放',
+  'tree.s6.main':'繁花流光',    'tree.s6.sub':'能量在树脉间流淌，与你共鸣',
+  'tree.s7.main':'精神树已圆满','tree.s7.sub':'宁静即是你，你即是宁静',
+};
+window.APP_COPY = (function(){
+  try{ const s=localStorage.getItem('zenflow:app-copy'); if(s) return JSON.parse(s); }catch(e){}
+  return {};
+})();
+window.COPY = function(k){ const v=window.APP_COPY[k]; return v!==undefined?v:(window.APP_COPY_DEFAULT[k]||k); };
+window.saveAppCopy = function(copy){
+  try{localStorage.setItem('zenflow:app-copy',JSON.stringify(copy));}catch(e){}
+  window.APP_COPY=copy;
+  window.dispatchEvent(new CustomEvent('copy-updated'));
+};
 </script>
 
 <!-- ── ios-frame ─────────────────────────────────────────── -->
@@ -714,7 +772,7 @@ function OnboardingBreathScreen({ onComplete }) {
 
       {/* Countdown overlay */}
       {countdown > 0 && (
-        <div style={{ position:'absolute', inset:0, zIndex:50, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12 }}>
+        <div style={{ position:'absolute', inset:0, zIndex:50, background:'rgba(14,22,19,0.98)', backdropFilter:'blur(8px)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12 }}>
           <div style={{ fontFamily:'"Noto Serif SC",serif', fontSize:14, fontWeight:300, letterSpacing:'0.3em', color:'rgba(232,237,228,0.45)' }}>即将开始</div>
           <div key={countdown} style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:88, fontWeight:200, color:'rgba(174,199,158,0.9)', lineHeight:1, animation:'tick 0.4s ease-out' }}>{countdown}</div>
         </div>
@@ -811,6 +869,10 @@ function SettingsScreen({ onBack }) {
   const [importedFromFile, setImportedFromFile] = React.useState(
     !!localStorage.getItem('zenflow:tutorial-config')
   );
+  const [copyStatus, setCopyStatus] = React.useState(null);
+  const [copyImported, setCopyImported] = React.useState(
+    Object.keys(window.APP_COPY).length > 0
+  );
 
   // Clear import status after 4 s
   React.useEffect(() => {
@@ -818,6 +880,11 @@ function SettingsScreen({ onBack }) {
     const id = setTimeout(() => setImportStatus(null), 4000);
     return () => clearTimeout(id);
   }, [importStatus]);
+  React.useEffect(() => {
+    if (!copyStatus) return;
+    const id = setTimeout(() => setCopyStatus(null), 4000);
+    return () => clearTimeout(id);
+  }, [copyStatus]);
 
   const push = (i, h, e, n) => {
     const safeE = Math.max(e, i+2);
@@ -1001,6 +1068,54 @@ function SettingsScreen({ onBack }) {
           )}
         </div>
 
+        {/* copy.xlsx import */}
+        <div style={{ padding:'16px 0', borderTop:'1px solid rgba(232,237,228,0.07)' }}>
+          <div style={{ fontSize:13, color:'rgba(232,237,228,0.85)', marginBottom:4 }}>文案配置</div>
+          <div style={{ fontSize:11.5, color:'rgba(232,237,228,0.45)', lineHeight:1.6, marginBottom:12 }}>
+            配置表位于 <span style={{ fontFamily:'"JetBrains Mono",monospace', color:'rgba(196,218,178,0.55)', fontSize:10.5 }}>~/Downloads/zenflow/copy.xlsx</span>，编辑 VALUE 列后刷新页面即时生效。也可在此手动导入覆盖。
+          </div>
+          {copyStatus && (
+            <div style={{ marginBottom:10, padding:'8px 12px', borderRadius:8, fontSize:11.5, fontFamily:'"JetBrains Mono",monospace',
+              background: copyStatus.startsWith('✓') ? 'rgba(174,199,158,0.1)' : 'rgba(220,80,80,0.1)',
+              border: `1px solid ${copyStatus.startsWith('✓') ? 'rgba(174,199,158,0.3)' : 'rgba(220,80,80,0.3)'}`,
+              color: copyStatus.startsWith('✓') ? 'rgba(196,218,178,0.9)' : 'rgba(220,140,140,0.9)',
+            }}>{copyStatus}</div>
+          )}
+          <label style={{ display:'block', cursor:'pointer' }}>
+            <input type="file" accept=".xlsx,.xls" style={{ display:'none' }} onChange={e => {
+              const file = e.target.files[0]; if (!file) return;
+              const reader = new FileReader();
+              reader.onload = evt => {
+                try {
+                  const copy = window.parseCopyExcel(evt.target.result);
+                  window.saveAppCopy(copy);
+                  setCopyImported(true);
+                  setCopyStatus(`✓ 已导入 ${Object.keys(copy).length} 条文案 · ${file.name}`);
+                } catch(err) { setCopyStatus('✗ 解析失败：' + err.message); }
+              };
+              reader.readAsArrayBuffer(file);
+              e.target.value = '';
+            }}/>
+            <div style={{
+              display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+              padding:'10px 0', borderRadius:10, cursor:'pointer', fontSize:13,
+              background:'rgba(174,199,158,0.08)', border:'1px dashed rgba(196,218,178,0.25)',
+              color:'rgba(196,218,178,0.75)', fontFamily:'"Noto Sans SC",system-ui,sans-serif',
+              transition:'all 0.2s',
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              导入 copy.xlsx
+            </div>
+          </label>
+          {copyImported && (
+            <button onClick={() => { window.saveAppCopy({}); setCopyStatus('↩ 已重置为默认文案'); setCopyImported(false); }} style={{
+              marginTop:8, width:'100%', padding:'8px 0', borderRadius:8, cursor:'pointer', fontSize:11.5,
+              background:'transparent', border:'1px solid rgba(232,237,228,0.08)', color:'rgba(232,237,228,0.35)',
+              fontFamily:'"Noto Sans SC",system-ui,sans-serif',
+            }}>重置为默认文案</button>
+          )}
+        </div>
+
         {/* BGM toggle */}
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'14px 0', borderTop:'1px solid rgba(232,237,228,0.07)' }}>
           <div>
@@ -1127,7 +1242,7 @@ function HomeScreen({ onGetHelp, onSettings, onTree, onDev, onBgPicker, onTherap
 
       {/* Centerpiece */}
       <div style={{flex:1,position:'relative',zIndex:2,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'0 32px'}}>
-        <div style={{fontFamily:'"Noto Serif SC",serif',fontSize:34,fontWeight:300,lineHeight:1.35,textAlign:'center',color:'#F0F3EA',letterSpacing:'0.02em'}}>此刻<br/>你是安全的</div>
+        <div style={{fontFamily:'"Noto Serif SC",serif',fontSize:34,fontWeight:300,lineHeight:1.35,textAlign:'center',color:'#F0F3EA',letterSpacing:'0.02em'}}>{COPY('home.heading').split('\n').map((l,i,a)=><span key={i}>{l}{i<a.length-1&&<br/>}</span>)}</div>
       </div>
 
       {/* CTA */}
@@ -1136,7 +1251,7 @@ function HomeScreen({ onGetHelp, onSettings, onTree, onDev, onBgPicker, onTherap
           <div style={{position:'absolute',inset:-8,borderRadius:999,border:`1px solid rgba(${th.r},0.18)`,transform:`scale(${1+glow*0.04})`,opacity:0.3+glow*0.4,transition:'transform 0.1s linear'}}/>
           <button style={{width:'100%',height:'100%',borderRadius:999,border:`1px solid rgba(${th.rBd},0.35)`,background:`linear-gradient(180deg,rgba(${th.rL},${0.22+glow*0.08}) 0%,rgba(${th.rD},${0.28+glow*0.06}) 100%)`,backdropFilter:'blur(8px)',color:'#F3F7ED',fontFamily:'"Noto Sans SC",system-ui,sans-serif',fontSize:18,fontWeight:500,letterSpacing:'0.08em',cursor:'pointer',boxShadow:`0 0 48px rgba(${th.rL},${0.15+glow*0.1}),inset 0 1px 0 rgba(255,255,255,0.15)`,transition:'box-shadow 0.1s linear,background 0.1s linear',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
             <span style={{width:7,height:7,borderRadius:'50%',background:'#E8F0D8',boxShadow:`0 0 8px rgba(232,240,216,${0.5+glow*0.5})`}}/>
-            <span>开始今日练习</span>
+            <span>{COPY('home.cta')}</span>
           </button>
         </div>
         {/* dev — subtle */}
@@ -1209,7 +1324,7 @@ function HelpScreen({ onExit, rhythm, noise }) {
       <div style={{position:'absolute',inset:0,background:`radial-gradient(circle at 50% 50%,rgba(${th.r},${0.12+(phase==='exhale'?0.08:0)}) 0%,transparent 55%)`,transition:'background 0.8s ease'}}/>
       <NoiseOverlay intensity={0.22}/>
       {countdown>0&&(
-        <div style={{position:'absolute',inset:0,zIndex:50,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12}}>
+        <div style={{position:'absolute',inset:0,zIndex:50,background:hasBg?'rgba(10,16,13,0.92)':'rgba(14,22,19,0.98)',backdropFilter:'blur(8px)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12}}>
           <div style={{fontFamily:'"Noto Serif SC",serif',fontSize:14,fontWeight:300,letterSpacing:'0.3em',color:'rgba(232,237,228,0.45)'}}>即将开始</div>
           <div key={countdown} style={{fontFamily:'"JetBrains Mono",ui-monospace,monospace',fontSize:88,fontWeight:200,color:`rgba(${th.rL},0.9)`,lineHeight:1,animation:'tick 0.4s ease-out'}}>{countdown}</div>
         </div>
@@ -1269,14 +1384,9 @@ function SummaryScreen({ data, onDone }) {
   const partialSecs = totalSecs - cycles * cycleTotal;
   const showPartial = partialSecs > 1.5 && cycles < 20;
 
-  const TIERS = [
-    { min:0,   title:'已踏出第一步', msg:'每一次呼吸都算数。下次试试坚持完整一个循环。' },
-    { min:30,  title:'初心之息',    msg:'你已完成了第一次完整练习。感受到了那份平静了吗？' },
-    { min:60,  title:'渐入平静',    msg:'一分钟的专注，足以改变接下来一小时的状态。' },
-    { min:180, title:'心流初现',    msg:'三分钟的练习开始真实激活副交感神经——科学证实的平静通道。' },
-    { min:360, title:'深度宁静',    msg:'研究显示六分钟后焦虑感显著下降。你的神经系统正在重置。' },
-    { min:600, title:'禅定圆满',    msg:'十分钟完整练习，神经系统已全面切换至平静模式。这是最高层级。' },
-  ];
+  const TIERS = [0,1,2,3,4,5].map((i,_,arr,mins=[0,30,60,180,360,600])=>({
+    min:mins[i], title:COPY(`summary.tier${i}.name`), msg:COPY(`summary.tier${i}.msg`),
+  }));
   const tierIdx = TIERS.reduce((acc,t,i)=>totalR>=t.min?i:acc, 0);
   const tier = TIERS[tierIdx];
   const circ = 2*Math.PI*28;
@@ -1373,12 +1483,8 @@ window.SummaryScreen=SummaryScreen;
 <!-- ── Therapy ─────────────────────────────────────────────── -->
 <script type="text/babel">
 const ALL_THERAPIES = [
-  { id:'cbt',       name:'认知行为疗法', sub:'识别并重构负面思维模式' },
-  { id:'exercise',  name:'运动疗法',    sub:'通过身体活动释放内啡肽' },
-  { id:'music',     name:'音乐疗法',    sub:'用声音调节情绪与神经系统' },
-  { id:'community', name:'冥想社区',    sub:'与同行者共享平静的片刻' },
-  { id:'social',    name:'今日社交',    sub:'微小的联结，巨大的疗愈力' },
-  { id:'mindful',   name:'正念疗法',    sub:'活在当下，感知而不评判' },
+  { id:'cbt' }, { id:'exercise' }, { id:'music' },
+  { id:'community' }, { id:'social' }, { id:'mindful' },
 ];
 
 function TherapyIcon({ id }) {
@@ -1479,8 +1585,8 @@ function TherapyScreen({ onBack, onSelectTherapy }) {
               <TherapyIcon id={t.id}/>
             </div>
             <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:15,fontWeight:400,color:'#F0F3EA',letterSpacing:'0.02em'}}>{t.name}</div>
-              <div style={{fontSize:11.5,color:'rgba(232,237,228,0.42)',marginTop:4,lineHeight:1.5,fontWeight:300}}>{t.sub}</div>
+              <div style={{fontSize:15,fontWeight:400,color:'#F0F3EA',letterSpacing:'0.02em'}}>{COPY(`therapy.${t.id}.name`)}</div>
+              <div style={{fontSize:11.5,color:'rgba(232,237,228,0.42)',marginTop:4,lineHeight:1.5,fontWeight:300}}>{COPY(`therapy.${t.id}.sub`)}</div>
             </div>
             {t.id==='mindful'?(
               <div style={{flexShrink:0,width:32,height:32,borderRadius:10,background:`rgba(${th.rL},0.14)`,border:`1px solid rgba(${th.rL},0.28)`,display:'flex',alignItems:'center',justifyContent:'center',color:`rgba(${th.rL},0.85)`}}>
@@ -1509,23 +1615,18 @@ window.TherapyScreen=TherapyScreen;
 <script type="text/babel">
 const SENSE_DATA=[
   {id:'see',  label:'看', cnt:5, rgb:'158,210,172',
-   title:'你能看到什么？', hint:'环顾四周，说出 5 个你此刻能看见的事物',
    dots:[{x:22,y:82},{x:88,y:32},{x:152,y:32},{x:218,y:82},{x:120,y:120}],
    segs:[[0,1],[1,2],[2,3],[3,4],[4,0]]},
   {id:'feel', label:'触', cnt:4, rgb:'220,188,128',
-   title:'你能感觉到什么？', hint:'觉察身体，说出 4 种你能感受到的触感',
    dots:[{x:120,y:16},{x:218,y:90},{x:120,y:164},{x:22,y:90}],
    segs:[[0,1],[1,2],[2,3],[3,0]]},
   {id:'hear', label:'听', cnt:3, rgb:'128,190,218',
-   title:'你能听到什么？', hint:'安静片刻，说出 3 种你能听到的声音',
    dots:[{x:30,y:155},{x:120,y:18},{x:210,y:155}],
    segs:[[0,1],[1,2],[2,0]]},
   {id:'smell',label:'闻', cnt:2, rgb:'195,155,215',
-   title:'你能闻到什么？', hint:'深吸一口气，说出 2 种你能感受到的气味',
    dots:[{x:68,y:90},{x:172,y:90}],
    segs:[[0,1]]},
   {id:'taste',label:'尝', cnt:1, rgb:'218,168,130',
-   title:'你能尝到什么？', hint:'感受此刻口腔中的味道',
    dots:[{x:120,y:90}],
    segs:[]},
 ];
@@ -1740,8 +1841,8 @@ function MindfulnessScreen({onBack,onDone}){
             </div>
           ))}
         </div>
-        <div style={{fontFamily:'"Noto Serif SC",serif',fontSize:22,fontWeight:300,color:'#F0F3EA',textAlign:'center',lineHeight:1.6}}>把注意力<br/>带回身体</div>
-        <div style={{fontSize:13,color:'rgba(232,237,228,0.52)',textAlign:'center',lineHeight:1.82,maxWidth:272,fontWeight:300}}>依次说出你此刻能感知到的事物。每输入一个，星点就会连成图案。这是经过科学验证的快速脱离焦虑方法。</div>
+        <div style={{fontFamily:'"Noto Serif SC",serif',fontSize:22,fontWeight:300,color:'#F0F3EA',textAlign:'center',lineHeight:1.6}}>{COPY('mindful.intro.title').split('\n').map((l,i)=><span key={i}>{l}{i===0&&<br/>}</span>)}</div>
+        <div style={{fontSize:13,color:'rgba(232,237,228,0.52)',textAlign:'center',lineHeight:1.82,maxWidth:272,fontWeight:300}}>{COPY('mindful.intro.desc')}</div>
       </div>
       <div style={{position:'relative',zIndex:2,padding:'0 28px 52px'}}>
         <button onClick={()=>setScreen('game')} style={{width:'100%',height:58,borderRadius:999,border:`1px solid rgba(${th.rBd},0.3)`,background:`linear-gradient(180deg,rgba(${th.rL},0.2) 0%,rgba(${th.rD},0.25) 100%)`,backdropFilter:'blur(8px)',color:'#F3F7ED',fontSize:16,fontWeight:400,letterSpacing:'0.08em',cursor:'pointer',fontFamily:'"Noto Sans SC",system-ui,sans-serif'}}>
@@ -1759,8 +1860,8 @@ function MindfulnessScreen({onBack,onDone}){
       <div style={{position:'absolute',top:'26%',left:'50%',transform:'translate(-50%,-50%)',width:380,height:380,borderRadius:'50%',background:`radial-gradient(circle,rgba(${th.r},0.16) 0%,transparent 70%)`,filter:'blur(28px)',pointerEvents:'none'}}/>
       <div style={{position:'relative',zIndex:2,flex:1,display:'flex',flexDirection:'column',padding:'70px 24px 40px',gap:10,overflowY:'auto'}}>
         <div style={{textAlign:'center',marginBottom:10}}>
-          <div style={{fontFamily:'"Noto Serif SC",serif',fontSize:24,fontWeight:300,color:'#F0F3EA',marginBottom:10}}>你回来了</div>
-          <div style={{fontSize:13,color:'rgba(232,237,228,0.52)',lineHeight:1.78,maxWidth:270,margin:'0 auto',fontWeight:300}}>你刚刚用 15 个感知锚点，把注意力从焦虑中拉了回来。这是真实发生的神经系统调节。</div>
+          <div style={{fontFamily:'"Noto Serif SC",serif',fontSize:24,fontWeight:300,color:'#F0F3EA',marginBottom:10}}>{COPY('mindful.done.title')}</div>
+          <div style={{fontSize:13,color:'rgba(232,237,228,0.52)',lineHeight:1.78,maxWidth:270,margin:'0 auto',fontWeight:300}}>{COPY('mindful.done.desc')}</div>
         </div>
         {SENSE_DATA.map((s,idx)=>(
           <div key={s.id} style={{borderRadius:14,background:`rgba(${s.rgb},0.06)`,border:`1px solid rgba(${s.rgb},0.13)`,padding:'12px 16px',animation:`cardUp 0.4s ease-out ${idx*0.07}s both`}}>
@@ -1804,8 +1905,8 @@ function MindfulnessScreen({onBack,onDone}){
         <div style={{fontSize:10,letterSpacing:'0.2em',fontFamily:'"JetBrains Mono",monospace',color:`rgba(${sense.rgb},0.65)`,textTransform:'uppercase',marginBottom:4}}>
           {sense.label} · {stageDone?'完成 ✓':`还需 ${sense.cnt-litCount} 个`}
         </div>
-        <div style={{fontFamily:'"Noto Serif SC",serif',fontSize:19,fontWeight:300,color:'#F0F3EA'}}>{sense.title}</div>
-        <div style={{fontSize:11.5,color:'rgba(232,237,228,0.42)',marginTop:3,fontWeight:300}}>{sense.hint}</div>
+        <div style={{fontFamily:'"Noto Serif SC",serif',fontSize:19,fontWeight:300,color:'#F0F3EA'}}>{COPY(`mindful.${sense.id}.title`)}</div>
+        <div style={{fontSize:11.5,color:'rgba(232,237,228,0.42)',marginTop:3,fontWeight:300}}>{COPY(`mindful.${sense.id}.hint`)}</div>
       </div>
 
       {/* Constellation */}
@@ -1971,14 +2072,8 @@ function BlossomSVG({x,y,size}){
 
 
 function getTreeMessage(score){
-  if(score<0.10)return{main:'种子刚刚落土',sub:'每一次呼吸，都是新的开始'};
-  if(score<0.22)return{main:'嫩芽初现',sub:'生命在安静中悄悄萌发'};
-  if(score<0.36)return{main:'向光而生',sub:'你的坚持正在滋养这片内心'};
-  if(score<0.50)return{main:'根系渐稳',sub:'平静不是终点，是你本来的样子'};
-  if(score<0.64)return{main:'枝桠舒展',sub:'你已走过了一半的旅程'};
-  if(score<0.76)return{main:'花蕾初绽',sub:'内心的宁静开始以花的姿态绽放'};
-  if(score<0.90)return{main:'繁花流光',sub:'能量在树脉间流淌，与你共鸣'};
-  return{main:'精神树已圆满',sub:'宁静即是你，你即是宁静'};
+  const i=score<0.10?0:score<0.22?1:score<0.36?2:score<0.50?3:score<0.64?4:score<0.76?5:score<0.90?6:7;
+  return{main:COPY(`tree.s${i}.main`),sub:COPY(`tree.s${i}.sub`)};
 }
 
 function TreeScreen({onBack,growth,hrv}){
@@ -2391,6 +2486,7 @@ function App() {
   const hasOnboarded = (()=>{ try{return localStorage.getItem(ONBOARDED_KEY)==='1';}catch(e){return false;} })();
   const [route, setRoute] = React.useState(hasOnboarded ? 'home' : 'guide');
   const [twVer, setTwVer] = React.useState(0);
+  const [copyVer, setCopyVer] = React.useState(0);
   const [devOpen, setDevOpen] = React.useState(false);
   const [growth, setGrowth] = React.useState({...window.__GROWTH});
   const [sessionData, setSessionData] = React.useState(null);
@@ -2399,6 +2495,20 @@ function App() {
     const h=()=>setTwVer(v=>v+1);
     window.addEventListener('tweaks-updated',h);
     return()=>window.removeEventListener('tweaks-updated',h);
+  },[]);
+
+  React.useEffect(()=>{
+    const h=()=>setCopyVer(v=>v+1);
+    window.addEventListener('copy-updated',h);
+    // Auto-fetch copy.xlsx after React mounts (avoids race with Babel compile)
+    fetch('./copy.xlsx').then(r=>r.ok?r.arrayBuffer():null).catch(()=>null).then(buf=>{
+      if(!buf)return;
+      try{
+        const copy=window.parseCopyExcel(buf);
+        if(Object.keys(copy).length>0){window.APP_COPY=copy;setCopyVer(v=>v+1);}
+      }catch(e){console.warn('copy.xlsx parse error',e);}
+    });
+    return()=>window.removeEventListener('copy-updated',h);
   },[]);
 
   React.useEffect(()=>{
