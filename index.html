@@ -2501,13 +2501,17 @@ function App() {
     const h=()=>setCopyVer(v=>v+1);
     window.addEventListener('copy-updated',h);
     // Auto-fetch copy.xlsx after React mounts (avoids race with Babel compile)
-    fetch('./copy.xlsx').then(r=>r.ok?r.arrayBuffer():null).catch(()=>null).then(buf=>{
-      if(!buf)return;
-      try{
-        const copy=window.parseCopyExcel(buf);
-        if(Object.keys(copy).length>0){window.APP_COPY=copy;setCopyVer(v=>v+1);}
-      }catch(e){console.warn('copy.xlsx parse error',e);}
-    });
+    fetch('./copy.xlsx')
+      .then(r=>{ console.log('[copy] fetch status:', r.status, r.url); return r.ok?r.arrayBuffer():null; })
+      .catch(e=>{ console.warn('[copy] fetch failed (file:// protocol? server not running?):', e); return null; })
+      .then(buf=>{
+        if(!buf){ console.warn('[copy] no buffer, skipping'); return; }
+        try{
+          const copy=window.parseCopyExcel(buf);
+          console.log('[copy] loaded keys:', Object.keys(copy).length, Object.keys(copy).slice(0,3));
+          if(Object.keys(copy).length>0){window.APP_COPY=copy;setCopyVer(v=>v+1);}
+        }catch(e){console.warn('[copy] parse error',e);}
+      });
     return()=>window.removeEventListener('copy-updated',h);
   },[]);
 
