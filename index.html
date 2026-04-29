@@ -320,6 +320,24 @@ window.APP_COPY_DEFAULT = {
   'tree.s5.main':'花蕾初绽',    'tree.s5.sub':'内心的宁静开始以花的姿态绽放',
   'tree.s6.main':'繁花流光',    'tree.s6.sub':'能量在树脉间流淌，与你共鸣',
   'tree.s7.main':'精神树已圆满','tree.s7.sub':'宁静即是你，你即是宁静',
+  // 设置页
+  'settings.science':'呼气必须比吸气长至少 2 秒，才能充分刺激迷走神经，激活副交感神经系统。这是缓解焦虑的关键机制。',
+  // 首页问候
+  'home.greeting.latenight':'夜深了','home.greeting.morning':'早安',
+  'home.greeting.noon':'午安','home.greeting.afternoon':'下午好','home.greeting.evening':'晚上好',
+  // 呼吸练习
+  'help.phase.inhale':'吸气','help.phase.hold':'屏息','help.phase.exhale':'呼气',
+  'help.hint.inhale':'慢慢吸入，感受胸腔向外扩张',
+  'help.hint.hold':'平静屏住，让氧气渗入血液',
+  'help.hint.exhale':'缓缓呼出，越慢越好',
+  // 结算页统计
+  'summary.stat.time':'用时','summary.stat.rhythm':'节奏',
+  // 背景选择
+  'bg.label.default':'默认','bg.label.house':'壁炉','bg.label.bamboo':'竹林',
+  'bg.label.temple':'寺庙','bg.label.lotus':'荷塘',
+  // 正念输入
+  'mindful.input.done':'完成 ✓','mindful.input.remaining':'还需 {n} 个',
+  'mindful.input.waiting':'稍候…','mindful.input.placeholder':'说出一个你{label}到的……',
 };
 window.APP_COPY = (function(){
   try{ const s=localStorage.getItem('zenflow:app-copy'); if(s) return JSON.parse(s); }catch(e){}
@@ -650,15 +668,15 @@ function OnboardingBreathScreen({ onComplete }) {
   let phase, phaseProgress, phaseLabel, phaseHint, phaseColor, remain;
   if (elapsed < inhale) {
     phase='inhale'; phaseProgress=elapsed/inhale;
-    phaseLabel='吸气'; phaseHint='慢慢吸入，感受胸腔向外扩张';
+    phaseLabel=COPY('help.phase.inhale'); phaseHint=COPY('help.hint.inhale');
     phaseColor='rgba(174,199,158,0.85)'; remain=Math.ceil(inhale-elapsed);
   } else if (elapsed < inhale+hold) {
     phase='hold'; phaseProgress=(elapsed-inhale)/hold;
-    phaseLabel='屏息'; phaseHint='平静屏住，让氧气渗入血液';
+    phaseLabel=COPY('help.phase.hold'); phaseHint=COPY('help.hint.hold');
     phaseColor='rgba(220,185,110,0.85)'; remain=Math.ceil(inhale+hold-elapsed);
   } else {
     phase='exhale'; phaseProgress=(elapsed-inhale-hold)/exhale;
-    phaseLabel='呼气'; phaseHint='缓缓呼出，越慢越好';
+    phaseLabel=COPY('help.phase.exhale'); phaseHint=COPY('help.hint.exhale');
     phaseColor='rgba(140,185,200,0.85)'; remain=Math.ceil(cycleTotal-elapsed);
   }
 
@@ -899,14 +917,6 @@ function SettingsScreen({ onBack }) {
   const changeExhale = v => { const safe = push(inhale,hold,v,noise); setExhale(safe); };
   const toggleNoise  = () => { const n=!noise; setNoise(n); push(inhale,hold,exhale,n); setBGM(n); if(n) startBGM(); };
 
-  const presets = [
-    { label:'4 - 7 - 8', v:[4,7,8] },
-    { label:'4 - 4 - 4', v:[4,4,4] },
-    { label:'4 - 2 - 6', v:[4,2,6] },
-    { label:'3 - 4 - 5', v:[3,4,5] },
-  ];
-  const activePreset = presets.find(p=>p.v[0]===inhale&&p.v[1]===hold&&p.v[2]===exhale);
-
   const sliderBase = { width:'100%', accentColor:'#AEC79E', height:4, cursor:'pointer' };
 
   return (
@@ -930,37 +940,14 @@ function SettingsScreen({ onBack }) {
         {/* Science note */}
         <div style={{ background:'rgba(174,199,158,0.06)', border:'1px solid rgba(196,218,178,0.12)', borderRadius:14, padding:'14px 16px', marginBottom:20 }}>
           <div style={{ fontSize:12, lineHeight:1.7, color:'rgba(232,237,228,0.65)', fontWeight:300 }}>
-            <b style={{ color:'rgba(196,218,178,0.85)', fontWeight:400 }}>科学原则：</b>呼气必须比吸气长至少 2 秒，才能充分刺激迷走神经，激活副交感神经系统。这是缓解焦虑的关键机制。
-          </div>
-        </div>
-
-        {/* Presets */}
-        <div style={{ marginBottom:22 }}>
-          <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:10, letterSpacing:'0.2em', color:'rgba(196,218,178,0.6)', textTransform:'uppercase', marginBottom:12 }}>预设节奏</div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-            {presets.map(p => {
-              const isActive = p.v[0]===inhale && p.v[1]===hold && p.v[2]===exhale;
-              return (
-                <button key={p.label} onClick={()=>{ setInhale(p.v[0]); setHold(p.v[1]); setExhale(p.v[2]); setConstrained(false); push(p.v[0],p.v[1],p.v[2],noise); }} style={{
-                  padding:'12px 10px', borderRadius:12, cursor:'pointer',
-                  background: isActive ? 'rgba(174,199,158,0.16)' : 'rgba(232,237,228,0.04)',
-                  border: isActive ? '1px solid rgba(196,218,178,0.45)' : '1px solid rgba(232,237,228,0.1)',
-                  color: isActive ? '#E8F0D8' : 'rgba(232,237,228,0.7)',
-                }}>
-                  <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:13, fontWeight: isActive?400:300, marginBottom:4 }}>{p.label}</div>
-                  <div style={{ fontSize:10.5, color:isActive?'rgba(196,218,178,0.7)':'rgba(232,237,228,0.35)', fontFamily:'"Noto Sans SC",sans-serif' }}>
-                    {p.v[0]}s 吸 · {p.v[1]}s 屏 · {p.v[2]}s 呼
-                  </div>
-                </button>
-              );
-            })}
+            <b style={{ color:'rgba(196,218,178,0.85)', fontWeight:400 }}>科学原则：</b>{COPY('settings.science')}
           </div>
         </div>
 
         {/* Custom sliders */}
         <div style={{ marginBottom:22 }}>
           <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:10, letterSpacing:'0.2em', color:'rgba(196,218,178,0.6)', textTransform:'uppercase', marginBottom:16 }}>
-            自定义 {!activePreset && <span style={{ color:'rgba(220,175,80,0.7)' }}>· 当前</span>}
+            调整节奏
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:18 }}>
             {/* Inhale */}
@@ -1161,7 +1148,7 @@ function HomeScreen({ onGetHelp, onSettings, onTree, onDev, onBgPicker, onTherap
   },[]);
   const th = useTheme();
   const glow = 0.5+0.5*Math.sin(breathe*Math.PI*2);
-  const greeting = (()=>{ const h=new Date().getHours(); if(h<5)return'夜深了'; if(h<11)return'早安'; if(h<14)return'午安'; if(h<18)return'下午好'; if(h<22)return'晚上好'; return'夜深了'; })();
+  const greeting = (()=>{ const h=new Date().getHours(); if(h<5)return COPY('home.greeting.latenight'); if(h<11)return COPY('home.greeting.morning'); if(h<14)return COPY('home.greeting.noon'); if(h<18)return COPY('home.greeting.afternoon'); if(h<22)return COPY('home.greeting.evening'); return COPY('home.greeting.latenight'); })();
 
   return (
     <div style={{position:'absolute',inset:0,background:hasBg?'transparent':'linear-gradient(180deg,#1F2A24 0%,#16201B 45%,#0E1613 100%)',color:'#E8EDE4',overflow:'hidden',display:'flex',flexDirection:'column'}}>
@@ -1303,9 +1290,9 @@ function HelpScreen({ onExit, rhythm, noise }) {
   },[paused,cycleTotal,countdown]);
 
   let phase,phaseProgress,phaseLabel,remain;
-  if(elapsed<inhale){phase='inhale';phaseProgress=elapsed/inhale;phaseLabel='吸气';remain=Math.ceil(inhale-elapsed);}
-  else if(elapsed<inhale+hold){phase='hold';phaseProgress=(elapsed-inhale)/hold;phaseLabel='屏息';remain=Math.ceil(inhale+hold-elapsed);}
-  else{phase='exhale';phaseProgress=(elapsed-inhale-hold)/exhale;phaseLabel='呼气';remain=Math.ceil(cycleTotal-elapsed);}
+  if(elapsed<inhale){phase='inhale';phaseProgress=elapsed/inhale;phaseLabel=COPY('help.phase.inhale');remain=Math.ceil(inhale-elapsed);}
+  else if(elapsed<inhale+hold){phase='hold';phaseProgress=(elapsed-inhale)/hold;phaseLabel=COPY('help.phase.hold');remain=Math.ceil(inhale+hold-elapsed);}
+  else{phase='exhale';phaseProgress=(elapsed-inhale-hold)/exhale;phaseLabel=COPY('help.phase.exhale');remain=Math.ceil(cycleTotal-elapsed);}
 
   const prevPhase=React.useRef(phase);
   React.useEffect(()=>{if(prevPhase.current!=='exhale'&&phase==='exhale')setExhaleSeed(s=>s+1);prevPhase.current=phase;},[phase]);
@@ -1431,8 +1418,8 @@ function SummaryScreen({ data, onDone }) {
         <div style={{display:'flex',borderRadius:16,overflow:'hidden',border:`1px solid rgba(${th.rL},0.1)`}}>
           {[
             {label:'Cycles', val:String(cycles).padStart(2,'0'), small:false},
-            {label:'用时',   val:mins>0?`${mins}:${String(secs).padStart(2,'0')}`:`${secs}s`, small:false, sep:true},
-            {label:'节奏',   val:`${rhythm.inhale}·${rhythm.hold}·${rhythm.exhale}`, small:true, sep:true},
+            {label:COPY('summary.stat.time'),  val:mins>0?`${mins}:${String(secs).padStart(2,'0')}`:`${secs}s`, small:false, sep:true},
+            {label:COPY('summary.stat.rhythm'),val:`${rhythm.inhale}·${rhythm.hold}·${rhythm.exhale}`, small:true, sep:true},
           ].map(s=>(
             <div key={s.label} style={{flex:1,padding:'16px 8px',background:`rgba(${th.r},0.06)`,textAlign:'center',borderLeft:s.sep?`1px solid rgba(${th.rL},0.08)`:'none'}}>
               <div style={{fontFamily:'"JetBrains Mono",monospace',fontSize:s.small?18:26,fontWeight:200,color:`rgba(${th.rL},0.9)`,lineHeight:1.2}}>{s.val}</div>
@@ -1903,7 +1890,7 @@ function MindfulnessScreen({onBack,onDone}){
       {/* Title */}
       <div key={animKey+'h'} style={{position:'relative',zIndex:2,padding:'16px 28px 0',animation:'senseIn 0.42s ease-out'}}>
         <div style={{fontSize:10,letterSpacing:'0.2em',fontFamily:'"JetBrains Mono",monospace',color:`rgba(${sense.rgb},0.65)`,textTransform:'uppercase',marginBottom:4}}>
-          {sense.label} · {stageDone?'完成 ✓':`还需 ${sense.cnt-litCount} 个`}
+          {sense.label} · {stageDone?COPY('mindful.input.done'):COPY('mindful.input.remaining').replace('{n}',sense.cnt-litCount)}
         </div>
         <div style={{fontFamily:'"Noto Serif SC",serif',fontSize:19,fontWeight:300,color:'#F0F3EA'}}>{COPY(`mindful.${sense.id}.title`)}</div>
         <div style={{fontSize:11.5,color:'rgba(232,237,228,0.42)',marginTop:3,fontWeight:300}}>{COPY(`mindful.${sense.id}.hint`)}</div>
@@ -1928,7 +1915,7 @@ function MindfulnessScreen({onBack,onDone}){
         <input ref={inputRef} value={input} onChange={e=>setInput(e.target.value)}
           onKeyDown={e=>{ if(e.key==='Enter') submit(); }}
           disabled={stageDone||leaving}
-          placeholder={stageDone?'稍候…':'说出一个你' + sense.label + '到的……'}
+          placeholder={stageDone?COPY('mindful.input.waiting'):COPY('mindful.input.placeholder').replace('{label}',sense.label)}
           style={{flex:1,height:50,borderRadius:14,padding:'0 16px',background:'rgba(232,237,228,0.06)',
             border:`1.5px solid rgba(${sense.rgb},${stageDone?0.07:0.35})`,
             color:'#F0F3EA',fontSize:14,fontFamily:'"Noto Sans SC",system-ui,sans-serif',
@@ -2404,11 +2391,11 @@ applyThemeCSSVars();
 window.addEventListener('bg-updated',applyThemeCSSVars);
 
 const BG_OPTIONS=[
-  {id:'default',label:'默认',img:null},
-  {id:'house',  label:'壁炉',img:'background/house.jpg'},
-  {id:'bamboo', label:'竹林',img:'background/bamboo.jpg'},
-  {id:'temple', label:'寺庙',img:'background/temple.jpg'},
-  {id:'lotus',  label:'荷塘',img:'background/lotus.jpg'},
+  {id:'default',get label(){return COPY('bg.label.default')},img:null},
+  {id:'house',  get label(){return COPY('bg.label.house')},  img:'background/house.jpg'},
+  {id:'bamboo', get label(){return COPY('bg.label.bamboo')}, img:'background/bamboo.jpg'},
+  {id:'temple', get label(){return COPY('bg.label.temple')}, img:'background/temple.jpg'},
+  {id:'lotus',  get label(){return COPY('bg.label.lotus')},  img:'background/lotus.jpg'},
 ];
 
 function useTheme(){
