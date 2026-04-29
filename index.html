@@ -320,6 +320,19 @@ window.APP_COPY_DEFAULT = {
   'tree.s5.main':'花蕾初绽',    'tree.s5.sub':'内心的宁静开始以花的姿态绽放',
   'tree.s6.main':'繁花流光',    'tree.s6.sub':'能量在树脉间流淌，与你共鸣',
   'tree.s7.main':'精神树已圆满','tree.s7.sub':'宁静即是你，你即是宁静',
+  // Dirga Pranayama 三段式呼吸
+  'dirga.home.cta':'三段式呼吸 · Dirga Pranayama',
+  'dirga.prep.title':'三段式呼吸', 'dirga.prep.sub':'Dirga Pranayama',
+  'dirga.prep.step1':'找一个舒适的地方躺下，保持脊背自然伸展',
+  'dirga.prep.step2':'将一只手放在腹部，感受每次呼吸时腹部的起伏',
+  'dirga.prep.step3':'闭上眼睛，保持几次自然呼吸，放松全身',
+  'dirga.prep.warning':'请勿在 panic attack（惊恐发作）时练习此方法。如感到头晕或不适，请立即停止并恢复正常呼吸。',
+  'dirga.prep.cta':'我已准备好，开始练习',
+  'dirga.label.belly':'腹部', 'dirga.label.chest':'胸部',
+  'dirga.phase.belly-in':'腹部吸气', 'dirga.hint.belly-in':'让腹部自然隆起，肚脐向外扩张',
+  'dirga.phase.chest-in':'胸部吸气', 'dirga.hint.chest-in':'胸腔继续向上扩展，直到完全充满',
+  'dirga.phase.chest-out':'胸部呼气', 'dirga.hint.chest-out':'从胸部开始收缩，缓缓呼出',
+  'dirga.phase.belly-out':'腹部呼气', 'dirga.hint.belly-out':'腹部缓缓回落，将气息完全呼尽',
   // 设置页
   'settings.science':'呼气必须比吸气长至少 2 秒，才能充分刺激迷走神经，激活副交感神经系统。这是缓解焦虑的关键机制。',
   // 首页问候
@@ -944,6 +957,29 @@ function SettingsScreen({ onBack }) {
           </div>
         </div>
 
+        {/* Presets */}
+        <div style={{ marginBottom:22 }}>
+          <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:10, letterSpacing:'0.2em', color:'rgba(196,218,178,0.6)', textTransform:'uppercase', marginBottom:12 }}>预设节奏</div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+            {[{label:'4-7-8 呼吸法', v:[4,7,8]},{label:'7-11 呼吸法', v:[7,3,11]}].map(p=>{
+              const isActive=p.v[0]===inhale&&p.v[1]===hold&&p.v[2]===exhale;
+              return (
+                <button key={p.label} onClick={()=>{setInhale(p.v[0]);setHold(p.v[1]);setExhale(p.v[2]);setConstrained(false);push(p.v[0],p.v[1],p.v[2],noise);}} style={{
+                  padding:'12px 10px', borderRadius:12, cursor:'pointer',
+                  background:isActive?'rgba(174,199,158,0.16)':'rgba(232,237,228,0.04)',
+                  border:isActive?'1px solid rgba(196,218,178,0.45)':'1px solid rgba(232,237,228,0.1)',
+                  color:isActive?'#E8F0D8':'rgba(232,237,228,0.7)',
+                }}>
+                  <div style={{fontFamily:'"JetBrains Mono",monospace',fontSize:13,fontWeight:isActive?400:300,marginBottom:4}}>{p.label}</div>
+                  <div style={{fontSize:10.5,color:isActive?'rgba(196,218,178,0.7)':'rgba(232,237,228,0.35)',fontFamily:'"Noto Sans SC",sans-serif'}}>
+                    {p.v[0]}s 吸 · {p.v[1]}s 屏 · {p.v[2]}s 呼
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Custom sliders */}
         <div style={{ marginBottom:22 }}>
           <div style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:10, letterSpacing:'0.2em', color:'rgba(196,218,178,0.6)', textTransform:'uppercase', marginBottom:16 }}>
@@ -1124,9 +1160,212 @@ function SettingsScreen({ onBack }) {
 window.SettingsScreen = SettingsScreen;
 </script>
 
+<!-- ── Dirga Pranayama ──────────────────────────────────── -->
+<script type="text/babel">
+function DirgaPrepScreen({ onStart, onBack }) {
+  const th = useTheme();
+  const hasBg = (window.__BG||'default')!=='default';
+  const [bgBright] = React.useState(window.__GROWTH.bgBright??40);
+  return (
+    <div style={{position:'absolute',inset:0,background:hasBg?'transparent':'linear-gradient(180deg,#1F2A24 0%,#16201B 45%,#0E1613 100%)',color:'#E8EDE4',overflow:'hidden',display:'flex',flexDirection:'column'}}>
+      <BgLayer brightness={bgBright/100}/>
+      <NoiseOverlay intensity={0.22}/>
+      <div style={{position:'relative',zIndex:2,padding:'66px 22px 0',display:'flex',alignItems:'center',gap:14}}>
+        <button onClick={onBack} style={{background:'rgba(232,237,228,0.06)',border:'1px solid rgba(232,237,228,0.12)',borderRadius:999,width:36,height:36,cursor:'pointer',color:'rgba(232,237,228,0.7)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <div>
+          <div style={{fontFamily:'"JetBrains Mono",monospace',fontSize:10,letterSpacing:'0.22em',color:'rgba(196,218,178,0.6)',textTransform:'uppercase'}}>{COPY('dirga.prep.sub')}</div>
+          <div style={{fontFamily:'"Noto Serif SC",serif',fontSize:20,fontWeight:300,color:'#F0F3EA',marginTop:3}}>{COPY('dirga.prep.title')}</div>
+        </div>
+      </div>
+      <div style={{flex:1,position:'relative',zIndex:2,overflowY:'auto',padding:'28px 22px 40px',display:'flex',flexDirection:'column',gap:14}}>
+
+        {/* Preview circles */}
+        <div style={{display:'flex',justifyContent:'center',padding:'16px 0 8px'}}>
+          <svg width="160" height="120" viewBox="0 0 160 120">
+            <circle cx="65" cy="80" r="44" fill="rgba(220,185,110,0.1)" stroke="rgba(220,185,110,0.5)" strokeWidth="1.5"/>
+            <circle cx="95" cy="44" r="44" fill="rgba(140,185,200,0.1)" stroke="rgba(140,185,200,0.5)" strokeWidth="1.5"/>
+            <text x="38" y="112" fontSize="11" fill="rgba(220,185,110,0.8)" fontFamily="Noto Sans SC, sans-serif">{COPY('dirga.label.belly')}</text>
+            <text x="106" y="18" fontSize="11" fill="rgba(140,185,200,0.8)" fontFamily="Noto Sans SC, sans-serif">{COPY('dirga.label.chest')}</text>
+          </svg>
+        </div>
+
+        {/* Steps */}
+        <div style={{background:'rgba(232,237,228,0.04)',borderRadius:16,padding:'18px',border:'1px solid rgba(232,237,228,0.08)'}}>
+          <div style={{fontFamily:'"JetBrains Mono",monospace',fontSize:10,letterSpacing:'0.2em',color:`rgba(${th.rL},0.6)`,textTransform:'uppercase',marginBottom:14}}>准备步骤</div>
+          {[COPY('dirga.prep.step1'),COPY('dirga.prep.step2'),COPY('dirga.prep.step3')].map((s,i)=>(
+            <div key={i} style={{display:'flex',gap:12,marginBottom:i<2?12:0}}>
+              <div style={{width:22,height:22,borderRadius:'50%',background:`rgba(${th.rL},0.12)`,border:`1px solid rgba(${th.rL},0.3)`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                <span style={{fontSize:11,fontFamily:'"JetBrains Mono",monospace',color:`rgba(${th.rL},0.9)`}}>{i+1}</span>
+              </div>
+              <div style={{fontSize:13,color:'rgba(232,237,228,0.8)',lineHeight:1.65,paddingTop:2}}>{s}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Rhythm */}
+        <div style={{background:'rgba(232,237,228,0.04)',borderRadius:16,padding:'16px 18px',border:'1px solid rgba(232,237,228,0.08)'}}>
+          <div style={{fontFamily:'"JetBrains Mono",monospace',fontSize:10,letterSpacing:'0.2em',color:`rgba(${th.rL},0.6)`,textTransform:'uppercase',marginBottom:12}}>呼吸节奏</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:6}}>
+            {[
+              {key:'dirga.phase.belly-in', dur:'4s', col:'rgba(220,185,110,0.85)'},
+              {key:'dirga.phase.chest-in', dur:'4s', col:'rgba(140,185,200,0.85)'},
+              {key:'dirga.phase.chest-out',dur:'4s', col:'rgba(140,185,200,0.55)'},
+              {key:'dirga.phase.belly-out',dur:'4s', col:'rgba(220,185,110,0.55)'},
+            ].map(p=>(
+              <div key={p.key} style={{textAlign:'center',padding:'10px 4px',borderRadius:10,background:'rgba(232,237,228,0.04)',border:'1px solid rgba(232,237,228,0.08)'}}>
+                <div style={{fontFamily:'"JetBrains Mono",monospace',fontSize:16,color:p.col,fontWeight:300}}>{p.dur}</div>
+                <div style={{fontSize:9,color:'rgba(232,237,228,0.45)',marginTop:4,fontFamily:'"Noto Sans SC",sans-serif',lineHeight:1.3}}>{COPY(p.key)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Warning */}
+        <div style={{background:'rgba(220,175,80,0.06)',borderRadius:12,padding:'13px 16px',border:'1px solid rgba(220,175,80,0.2)',display:'flex',gap:10,alignItems:'flex-start'}}>
+          <span style={{fontSize:15,lineHeight:1.2,flexShrink:0}}>⚠</span>
+          <div style={{fontSize:12,color:'rgba(220,175,80,0.85)',lineHeight:1.65}}>{COPY('dirga.prep.warning')}</div>
+        </div>
+
+        <button onClick={onStart} style={{marginTop:4,padding:'16px 0',borderRadius:16,cursor:'pointer',fontSize:15,background:`rgba(${th.rL},0.14)`,border:`1px solid rgba(${th.rL},0.38)`,color:'#E8F0D8',fontFamily:'"Noto Serif SC",serif',fontWeight:300,letterSpacing:'0.1em'}}>
+          {COPY('dirga.prep.cta')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function DirgaScreen({ onBack }) {
+  const th = useTheme();
+  const hasBg = (window.__BG||'default')!=='default';
+  const [bgBright] = React.useState(window.__GROWTH.bgBright??40);
+  const [countdown, setCountdown] = React.useState(3);
+  const [started, setStarted] = React.useState(false);
+  const [elapsed, setElapsed] = React.useState(0);
+  const startRef = React.useRef(null);
+
+  const DURS = [4, 4, 4, 4]; // belly-in, chest-in, chest-out, belly-out
+  const CYCLE = DURS.reduce((a,b)=>a+b, 0); // 16s
+  const PHASE_KEYS = ['belly-in','chest-in','chest-out','belly-out'];
+  const PHASE_COLS = ['rgba(220,185,110,0.9)','rgba(140,185,200,0.9)','rgba(140,185,200,0.6)','rgba(220,185,110,0.6)'];
+  const BAR_COLS   = ['rgba(220,185,110,0.7)','rgba(140,185,200,0.7)','rgba(140,185,200,0.5)','rgba(220,185,110,0.5)'];
+
+  // Countdown
+  React.useEffect(()=>{
+    if(countdown<=0){setStarted(true);return;}
+    const id=setTimeout(()=>setCountdown(c=>c-1),1000);
+    return()=>clearTimeout(id);
+  },[countdown]);
+
+  // RAF animation
+  React.useEffect(()=>{
+    if(!started)return;
+    startRef.current=performance.now();
+    let rafId;
+    const tick=(now)=>{setElapsed((now-startRef.current)/1000);rafId=requestAnimationFrame(tick);};
+    rafId=requestAnimationFrame(tick);
+    return()=>cancelAnimationFrame(rafId);
+  },[started]);
+
+  // Derive phase & levels from elapsed
+  const cycleElapsed = elapsed % CYCLE;
+  const cycles = Math.floor(elapsed / CYCLE);
+  let phaseIdx=0, phaseProgress=0, acc=0;
+  for(let i=0;i<DURS.length;i++){
+    if(cycleElapsed<acc+DURS[i]){phaseIdx=i;phaseProgress=(cycleElapsed-acc)/DURS[i];break;}
+    acc+=DURS[i];
+  }
+
+  let belly=0, chest=0;
+  if(phaseIdx===0){belly=phaseProgress;chest=0;}
+  else if(phaseIdx===1){belly=1;chest=phaseProgress;}
+  else if(phaseIdx===2){belly=1;chest=1-phaseProgress;}
+  else{belly=1-phaseProgress;chest=0;}
+
+  // Circle geometry
+  const R_MIN=62, R_MAX=102;
+  const bellyR = R_MIN + belly*(R_MAX-R_MIN);
+  const chestR = R_MIN + chest*(R_MAX-R_MIN);
+
+  const totalSecs=Math.floor(elapsed);
+  const mins=Math.floor(totalSecs/60), secs=totalSecs%60;
+  const phaseKey=PHASE_KEYS[phaseIdx];
+  const phaseCol=PHASE_COLS[phaseIdx];
+  const barCol=BAR_COLS[phaseIdx];
+  const isBellyActive=phaseIdx===0||phaseIdx===3;
+
+  return (
+    <div style={{position:'absolute',inset:0,background:hasBg?'transparent':'linear-gradient(180deg,#1F2A24 0%,#16201B 45%,#0E1613 100%)',color:'#E8EDE4',overflow:'hidden'}}>
+      <BgLayer brightness={bgBright/100}/>
+      <NoiseOverlay intensity={0.18}/>
+
+      {/* Countdown overlay */}
+      {countdown>0&&(
+        <div style={{position:'absolute',inset:0,zIndex:50,background:hasBg?'rgba(10,16,13,0.92)':'rgba(14,22,19,0.98)',backdropFilter:'blur(8px)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12}}>
+          <div style={{fontFamily:'"Noto Serif SC",serif',fontSize:14,fontWeight:300,letterSpacing:'0.3em',color:'rgba(232,237,228,0.45)'}}>即将开始</div>
+          <div key={countdown} style={{fontFamily:'"JetBrains Mono",monospace',fontSize:88,fontWeight:100,color:`rgba(${th.rL},0.9)`,lineHeight:1,animation:'tick 0.4s ease-out'}}>{countdown}</div>
+        </div>
+      )}
+
+      {/* Back */}
+      <button onClick={onBack} style={{position:'absolute',top:54,left:20,zIndex:10,background:'rgba(232,237,228,0.06)',border:'1px solid rgba(232,237,228,0.12)',borderRadius:999,width:36,height:36,cursor:'pointer',color:'rgba(232,237,228,0.7)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+
+      {/* Timer + cycle */}
+      <div style={{position:'absolute',top:58,right:22,zIndex:10,textAlign:'right'}}>
+        <div style={{fontFamily:'"JetBrains Mono",monospace',fontSize:18,fontWeight:200,color:'rgba(232,237,228,0.7)'}}>{mins>0?`${mins}:${String(secs).padStart(2,'0')}`:secs+'s'}</div>
+        <div style={{fontSize:10,color:'rgba(232,237,228,0.35)',fontFamily:'"JetBrains Mono",monospace',letterSpacing:'0.1em',marginTop:2}}>{cycles} 循环</div>
+      </div>
+
+      {/* Two circles SVG */}
+      <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-58%)',zIndex:2}}>
+        <svg width="280" height="320" viewBox="0 0 280 320">
+          <defs>
+            <filter id="dg-glow-b"><feGaussianBlur stdDeviation="8" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            <filter id="dg-glow-c"><feGaussianBlur stdDeviation="8" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          {/* Belly circle (amber, lower) */}
+          <circle cx="140" cy="210" r={bellyR}
+            fill={`rgba(220,185,110,${0.05+belly*0.13})`}
+            stroke={`rgba(220,185,110,${0.25+belly*0.5})`}
+            strokeWidth={isBellyActive?2:1.2}
+            filter={belly>0.1?'url(#dg-glow-b)':undefined}/>
+          {/* Chest circle (blue, upper) */}
+          <circle cx="140" cy="130" r={chestR}
+            fill={`rgba(140,185,200,${0.05+chest*0.13})`}
+            stroke={`rgba(140,185,200,${0.25+chest*0.5})`}
+            strokeWidth={!isBellyActive?2:1.2}
+            filter={chest>0.1?'url(#dg-glow-c)':undefined}/>
+          {/* Labels */}
+          <text x="140" y={210+bellyR+18} textAnchor="middle" fontSize="11" fill={`rgba(220,185,110,${0.4+belly*0.5})`} fontFamily="Noto Sans SC, sans-serif">{COPY('dirga.label.belly')}</text>
+          <text x="140" y={130-chestR-10} textAnchor="middle" fontSize="11" fill={`rgba(140,185,200,${0.4+chest*0.5})`} fontFamily="Noto Sans SC, sans-serif">{COPY('dirga.label.chest')}</text>
+        </svg>
+      </div>
+
+      {/* Phase label + hint */}
+      <div style={{position:'absolute',bottom:'22%',left:0,right:0,zIndex:2,textAlign:'center',padding:'0 32px'}}>
+        <div style={{fontFamily:'"Noto Serif SC",serif',fontSize:22,fontWeight:300,color:phaseCol,marginBottom:10,transition:'color 0.6s ease'}}>{COPY(`dirga.phase.${phaseKey}`)}</div>
+        <div style={{fontSize:13,color:'rgba(232,237,228,0.5)',fontFamily:'"Noto Sans SC",sans-serif',lineHeight:1.5}}>{COPY(`dirga.hint.${phaseKey}`)}</div>
+      </div>
+
+      {/* Phase progress bar */}
+      <div style={{position:'absolute',bottom:'17%',left:'22%',right:'22%',zIndex:2}}>
+        <div style={{height:2,background:'rgba(232,237,228,0.08)',borderRadius:99}}>
+          <div style={{height:'100%',borderRadius:99,width:`${phaseProgress*100}%`,background:barCol,transition:'background 0.5s ease'}}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+window.DirgaPrepScreen=DirgaPrepScreen;
+window.DirgaScreen=DirgaScreen;
+</script>
+
 <!-- ── home ──────────────────────────────────────────────── -->
 <script type="text/babel">
-function HomeScreen({ onGetHelp, onSettings, onTree, onDev, onBgPicker, onTherapy }) {
+function HomeScreen({ onGetHelp, onDirga, onSettings, onTree, onDev, onBgPicker, onTherapy }) {
   const [breathe, setBreathe] = React.useState(0);
   const [iconOpen, setIconOpen] = React.useState(false);
   const [hasBg, setHasBg] = React.useState((window.__BG||'default')!=='default');
@@ -1233,7 +1472,12 @@ function HomeScreen({ onGetHelp, onSettings, onTree, onDev, onBgPicker, onTherap
       </div>
 
       {/* CTA */}
-      <div style={{position:'relative',zIndex:2,padding:'0 28px 54px',display:'flex',flexDirection:'column',alignItems:'center',gap:16}}>
+      <div style={{position:'relative',zIndex:2,padding:'0 28px 54px',display:'flex',flexDirection:'column',alignItems:'center',gap:12}}>
+        {/* Dirga secondary button */}
+        <button onClick={onDirga} style={{width:'100%',padding:'12px 0',borderRadius:14,cursor:'pointer',background:'rgba(232,237,228,0.04)',border:'1px solid rgba(232,237,228,0.12)',color:'rgba(232,237,228,0.55)',fontFamily:'"Noto Sans SC",system-ui,sans-serif',fontSize:12.5,letterSpacing:'0.05em',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>
+          {COPY('dirga.home.cta')}
+        </button>
         <div onClick={onGetHelp} style={{position:'relative',width:'100%',height:76,cursor:'pointer'}}>
           <div style={{position:'absolute',inset:-8,borderRadius:999,border:`1px solid rgba(${th.r},0.18)`,transform:`scale(${1+glow*0.04})`,opacity:0.3+glow*0.4,transition:'transform 0.1s linear'}}/>
           <button style={{width:'100%',height:'100%',borderRadius:999,border:`1px solid rgba(${th.rBd},0.35)`,background:`linear-gradient(180deg,rgba(${th.rL},${0.22+glow*0.08}) 0%,rgba(${th.rD},${0.28+glow*0.06}) 100%)`,backdropFilter:'blur(8px)',color:'#F3F7ED',fontFamily:'"Noto Sans SC",system-ui,sans-serif',fontSize:18,fontWeight:500,letterSpacing:'0.08em',cursor:'pointer',boxShadow:`0 0 48px rgba(${th.rL},${0.15+glow*0.1}),inset 0 1px 0 rgba(255,255,255,0.15)`,transition:'box-shadow 0.1s linear,background 0.1s linear',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
@@ -2531,6 +2775,7 @@ function App() {
         {route==='home' && (
           <HomeScreen
             onGetHelp={()=>setRoute('help')}
+            onDirga={()=>setRoute('dirga-prep')}
             onSettings={()=>setRoute('settings')}
             onTree={()=>setRoute('tree')}
             onDev={()=>setDevOpen(true)}
@@ -2538,6 +2783,8 @@ function App() {
             onTherapy={()=>setRoute('therapy')}
           />
         )}
+        {route==='dirga-prep' && <DirgaPrepScreen onStart={()=>setRoute('dirga')} onBack={()=>setRoute('home')}/>}
+        {route==='dirga' && <DirgaScreen onBack={()=>setRoute('home')}/>}
         {route==='therapy' && (
           <TherapyScreen
             onBack={()=>setRoute('home')}
